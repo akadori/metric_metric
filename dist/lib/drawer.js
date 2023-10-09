@@ -12,26 +12,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.main = void 0;
 const fs_1 = __importDefault(require("fs"));
-const util_1 = require("util");
 const canvas_1 = require("canvas");
 const debug_1 = __importDefault(require("debug"));
 const roughjs_1 = __importDefault(require("roughjs"));
-const zod_1 = require("zod");
-const MettricSchema = zod_1.z.object({
-    name: zod_1.z.string(),
-    start: zod_1.z.string(),
-    end: zod_1.z.string(),
-    duration: zod_1.z.number(),
-    parent: zod_1.z.string(),
-    depth: zod_1.z.number(),
-});
-const MettricArraySchema = zod_1.z.array(MettricSchema);
 const infoLogger = (0, debug_1.default)("info");
 function main(config) {
     return __awaiter(this, void 0, void 0, function* () {
         infoLogger("start");
-        const metrics = yield readData(config.srcPath);
+        const metrics = config.src;
         const canvas = (0, canvas_1.createCanvas)(config.width, config.height);
         const context = canvas.getContext("2d");
         // @ts-ignore
@@ -79,17 +69,7 @@ function main(config) {
         render(canvas);
     });
 }
-function readData(srcPath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const readFileAsync = (0, util_1.promisify)(fs_1.default.readFile);
-        const data = yield readFileAsync(srcPath, "utf-8");
-        if (typeof data !== "string") {
-            throw new Error("data is not string");
-        }
-        const parsed = MettricArraySchema.parse(JSON.parse(data));
-        return parsed;
-    });
-}
+exports.main = main;
 function drawVerticalAxis(canvas, context, metrics, option) {
     return __awaiter(this, void 0, void 0, function* () {
         const { line, ticks } = verticalAxis(metrics, option);
@@ -138,13 +118,13 @@ function verticalAxis(metrics, option) {
 function drawHorizontalAxis(canvas, context, metrics, option) {
     const { line, ticks } = horizontalAxis(metrics, option);
     canvas.line(line.from.x, line.from.y, line.to.x, line.to.y, {
-        stroke: "#000000",
+        stroke: "#ff0000",
         strokeWidth: 1,
         roughness: 0.5,
     });
     ticks.forEach((tick) => {
         canvas.line(tick.left, tick.top, tick.left, tick.top - 10, {
-            stroke: "#000000",
+            stroke: "#ff0000",
             strokeWidth: 1,
             roughness: 0.5,
         });
@@ -207,11 +187,3 @@ function createRectFromMetric(metric, option) {
 function render(canvas) {
     fs_1.default.writeFileSync("hoge.html", `<img src="${canvas.toDataURL()}" /><script>console.log("uuuu")</script>`);
 }
-main({
-    width: 4000,
-    height: 4000,
-    srcPath: "/Users/shuhei.tamari/ghq/github.com/shuhei.tamari/metric_metric/metrics.json",
-}).catch((e) => {
-    console.error(e);
-    process.exit(1);
-});

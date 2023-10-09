@@ -4,20 +4,7 @@ import { Canvas, CanvasRenderingContext2D, createCanvas } from "canvas";
 import debug from "debug";
 import rough from "roughjs";
 import { RoughCanvas } from "roughjs/bin/canvas";
-import { z } from "zod";
-
-const MettricSchema = z.object({
-  name: z.string(),
-  start: z.string(),
-  end: z.string(),
-  duration: z.number(),
-  parent: z.string(),
-  depth: z.number(),
-});
-
-const MettricArraySchema = z.array(MettricSchema);
-
-type Mettric = z.infer<typeof MettricSchema>;
+import { Score, ScoresSchema } from "./type";
 type Color = `#${string}`;
 type Rectangle = {
   left: number;
@@ -39,7 +26,7 @@ type RectangleWithMessage = Rectangle & {
 type Option = {
   epoch: number;
   ratio: number;
-  colorScheme: (metric: Mettric) => Color;
+  colorScheme: (metric: Score) => Color;
   origin: {
     top: number;
     left: number;
@@ -70,12 +57,12 @@ type CanvasConfig = {
 };
 
 type DataConfig = {
-  srcPath: string;
+  src: Score[];
 };
 
-async function main(config: CanvasConfig & DataConfig) {
+export async function main(config: CanvasConfig & DataConfig) {
   infoLogger("start");
-  const metrics = await readData(config.srcPath);
+  const metrics = config.src;
   const canvas = createCanvas(config.width, config.height);
   const context = canvas.getContext("2d");
   // @ts-ignore
@@ -85,7 +72,7 @@ async function main(config: CanvasConfig & DataConfig) {
     const start = new Date(cur.start).getTime();
     return acc < start ? acc : start;
   }, Infinity);
-  const colorScheme = (metric: Mettric): Color => {
+  const colorScheme = (metric: Score): Color => {
     switch (metric.depth % 3) {
       case 0:
         return "#ff0000";
@@ -122,21 +109,10 @@ async function main(config: CanvasConfig & DataConfig) {
   });
   render(canvas);
 }
-
-async function readData(srcPath: string): Promise<Mettric[]> {
-  const readFileAsync = promisify(fs.readFile);
-  const data = await readFileAsync(srcPath, "utf-8");
-  if (typeof data !== "string") {
-    throw new Error("data is not string");
-  }
-  const parsed = MettricArraySchema.parse(JSON.parse(data));
-  return parsed;
-}
-
 async function drawVerticalAxis(
   canvas: RoughCanvas,
   context: CanvasRenderingContext2D,
-  metrics: Mettric[],
+  metrics: Score[],
   option: Option,
 ): Promise<void> {
   const { line, ticks } = verticalAxis(metrics, option);
@@ -156,7 +132,7 @@ async function drawVerticalAxis(
 }
 
 function verticalAxis(
-  metrics: Mettric[],
+  metrics: Score[],
   option: Option,
 ): { line: Line; ticks: TickAndLabel[] } {
   const maxDepth = metrics.reduce((acc, cur) => {
@@ -186,30 +162,9 @@ function verticalAxis(
   };
 }
 
-function drawHorizontalAxis(
-  canvas: RoughCanvas,
-  context: CanvasRenderingContext2D,
-  metrics: Mettric[],
-  option: Option,
-): void {
-  const { line, ticks } = horizontalAxis(metrics, option);
-  canvas.line(line.from.x, line.from.y, line.to.x, line.to.y, {
-    stroke: "#000000",
-    strokeWidth: 1,
-    roughness: 0.5,
-  });
-  ticks.forEach((tick) => {
-    canvas.line(tick.left, tick.top, tick.left, tick.top - 10, {
-      stroke: "#000000",
-      strokeWidth: 1,
-      roughness: 0.5,
-    });
-    context.fillText(tick.label, tick.left - 20, tick.top - 20);
-  });
-}
 
 function horizontalAxis(
-  metrics: Mettric[],
+  metrics: Score[],
   option: Option,
 ): { line: Line; ticks: TickAndLabel[] } {
   const maxDuration = metrics.reduce((acc, cur) => {
@@ -239,10 +194,31 @@ function horizontalAxis(
   };
 }
 
+function drawHorizontalAxis(
+  canvas: RoughCanvas,
+  context: CanvasRenderingContext2D,
+  metrics: Score[],
+  option: Option,
+): void {
+  const { line, ticks } = horizontalAxis(metrics, option);
+  canvas.line(line.from.x, line.from.y, line.to.x, line.to.y, {
+    stroke: "#ff0000",
+    strokeWidth: 1,
+    roughness: 0.5,
+  });
+  ticks.forEach((tick) => {
+    canvas.line(tick.left, tick.top, tick.left, tick.top - 10, {
+      stroke: "#ff0000",
+      strokeWidth: 1,
+      roughness: 0.5,
+    });
+    context.fillText(tick.label, tick.left - 20, tick.top - 20);
+  });
+}
 async function drawRectangles(
   canvas: RoughCanvas,
   context: CanvasRenderingContext2D,
-  metrics: Mettric[],
+  metrics: Score[],
   option: Option,
 ): Promise<void> {
   const rectangles = metrics.map((metric) =>
@@ -268,7 +244,7 @@ async function drawRectangles(
 }
 
 function createRectFromMetric(
-  metric: Mettric,
+  metric: Score,
   option: Option,
 ): RectangleWithMessage {
   return {
@@ -292,13 +268,3 @@ function render(canvas: Canvas) {
     `<img src="${canvas.toDataURL()}" /><script>console.log("uuuu")</script>`,
   );
 }
-
-main({
-  width: 4000,
-  height: 4000,
-  srcPath:
-    "/Users/shuhei.tamari/ghq/github.com/shuhei.tamari/metric_metric/metrics.json",
-}).catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
