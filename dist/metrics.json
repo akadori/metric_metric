@@ -1,0 +1,26 @@
+[
+  {
+    "name": "./byebye",
+    "start": "2023-10-09T01:47:49.370Z",
+    "end": "2023-10-09T01:47:49.372Z",
+    "duration": 2,
+    "parent": "/Users/shuhei.tamari/ghq/github.com/shuhei.tamari/metric_metric/dist/demo/bye.js",
+    "depth": 2
+  },
+  {
+    "name": "./bye",
+    "start": "2023-10-09T01:47:49.368Z",
+    "end": "2023-10-09T01:47:49.372Z",
+    "duration": 4,
+    "parent": "/Users/shuhei.tamari/ghq/github.com/shuhei.tamari/metric_metric/dist/demo/main.js",
+    "depth": 1
+  },
+  {
+    "name": "../demo/main",
+    "start": "2023-10-09T01:47:49.366Z",
+    "end": "2023-10-09T01:47:49.372Z",
+    "duration": 6,
+    "parent": "/Users/shuhei.tamari/ghq/github.com/shuhei.tamari/metric_metric/dist/lib/scorer.js",
+    "depth": 0
+  }
+]
