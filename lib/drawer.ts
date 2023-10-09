@@ -1,27 +1,9 @@
 import fs from "fs";
-import { promisify } from "util";
 import { Canvas, CanvasRenderingContext2D, createCanvas } from "canvas";
-import debug from "debug";
 import rough from "roughjs";
 import { RoughCanvas } from "roughjs/bin/canvas";
-import { Score, ScoresSchema } from "./type";
+import { Score } from "./type";
 type Color = `#${string}`;
-type Rectangle = {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  color: Color;
-};
-
-type Message = {
-  value: string;
-  position: "left" | "right";
-};
-
-type RectangleWithMessage = Rectangle & {
-  message: Message;
-};
 
 type Option = {
   epoch: number;
@@ -31,6 +13,7 @@ type Option = {
     top: number;
     left: number;
   };
+  fontSize?: number;
 };
 
 type Line = {
@@ -49,8 +32,6 @@ type TickAndLabel = {
   left: number;
   label: string;
 };
-
-const infoLogger = debug("info");
 type CanvasConfig = {
   width: number;
   height: number;
@@ -61,14 +42,15 @@ type DataConfig = {
 };
 
 export async function main(config: CanvasConfig & DataConfig) {
-  infoLogger("start");
-  const metrics = config.src;
+  const scores = config.src;
   const canvas = createCanvas(config.width, config.height);
   const context = canvas.getContext("2d");
   // @ts-ignore
   const rc = rough.canvas(canvas);
-  context.font = "30px serif"; // TODO: make it configurable
-  const epoch = metrics.reduce((acc, cur) => {
+  const ratio = 66;
+  const fontSize = ratio / 4;
+  context.font = `${fontSize}px serif`; // TODO: make it configurable
+  const epoch = scores.reduce((acc, cur) => {
     const start = new Date(cur.start).getTime();
     return acc < start ? acc : start;
   }, Infinity);
@@ -85,23 +67,23 @@ export async function main(config: CanvasConfig & DataConfig) {
     }
   };
   const origin = {
-    top: 300,
-    left: 300,
+    top: 50,
+    left: 30,
   };
-  const ratio = 100;
-  await drawVerticalAxis(rc, context, metrics, {
+  verticalAxis(rc, context, scores, {
+    epoch,
+    ratio,
+    colorScheme,
+    origin,
+    fontSize,
+  });
+  horizontalAxis(rc, context, scores, {
     epoch,
     ratio,
     colorScheme,
     origin,
   });
-  await drawHorizontalAxis(rc, context, metrics, {
-    epoch,
-    ratio,
-    colorScheme,
-    origin,
-  });
-  await drawRectangles(rc, context, metrics, {
+  drawRectangles(rc, context, scores, {
     epoch,
     ratio,
     colorScheme,
@@ -109,65 +91,43 @@ export async function main(config: CanvasConfig & DataConfig) {
   });
   render(canvas);
 }
-async function drawVerticalAxis(
+
+function verticalAxis(
   canvas: RoughCanvas,
   context: CanvasRenderingContext2D,
-  metrics: Score[],
+  scores: Score[],
   option: Option,
-): Promise<void> {
-  const { line, ticks } = verticalAxis(metrics, option);
-  canvas.line(line.from.x, line.from.y, line.to.x, line.to.y, {
-    stroke: "#000000",
-    strokeWidth: 1,
-    roughness: 0.5,
-  });
-  ticks.forEach((tick) => {
-    canvas.line(tick.left - 10, tick.top, tick.left, tick.top, {
+) {
+  const maxDepth = scores.reduce((acc, cur) => {
+    return acc < cur.depth ? cur.depth : acc;
+  }, 0);
+  canvas.line(
+    option.origin.left,
+    option.origin.top,
+    option.origin.left,
+    option.origin.top + (maxDepth + 1) * option.ratio,
+    {
       stroke: "#000000",
       strokeWidth: 1,
       roughness: 0.5,
-    });
-    context.fillText(tick.label, tick.left - 20, tick.top + 10);
-  });
-}
-
-function verticalAxis(
-  metrics: Score[],
-  option: Option,
-): { line: Line; ticks: TickAndLabel[] } {
-  const maxDepth = metrics.reduce((acc, cur) => {
-    return acc < cur.depth ? cur.depth : acc;
-  }, 0);
-  const line: Line = {
-    from: {
-      x: option.origin.left,
-      y: option.origin.top,
     },
-    to: {
-      x: option.origin.left,
-      y: option.origin.top + (maxDepth + 1) * option.ratio,
-    },
-  };
-  const ticks: TickAndLabel[] = [];
+  );
   for (let i = 0; i <= maxDepth; i++) {
-    ticks.push({
-      top: option.origin.top + (i + 0.5) * option.ratio,
-      left: option.origin.left,
-      label: i.toString(),
-    });
+    context.fillText(
+      i.toString(),
+      option.origin.left - 20,
+      option.origin.top + (i + 0.5) * option.ratio + (option.fontSize || 0) / 2,
+    );
   }
-  return {
-    line,
-    ticks,
-  };
 }
-
 
 function horizontalAxis(
-  metrics: Score[],
+  canvas: RoughCanvas,
+  context: CanvasRenderingContext2D,
+  scores: Score[],
   option: Option,
-): { line: Line; ticks: TickAndLabel[] } {
-  const maxDuration = metrics.reduce((acc, cur) => {
+) {
+  const maxDuration = scores.reduce((acc, cur) => {
     return acc < cur.duration ? cur.duration : acc;
   }, 0);
   const line: Line = {
@@ -188,42 +148,44 @@ function horizontalAxis(
       label: `${((maxDuration / 10) * i).toFixed(2)}ms`,
     });
   }
-  return {
-    line,
-    ticks,
-  };
-}
 
-function drawHorizontalAxis(
-  canvas: RoughCanvas,
-  context: CanvasRenderingContext2D,
-  metrics: Score[],
-  option: Option,
-): void {
-  const { line, ticks } = horizontalAxis(metrics, option);
   canvas.line(line.from.x, line.from.y, line.to.x, line.to.y, {
-    stroke: "#ff0000",
+    stroke: "#000000",
     strokeWidth: 1,
     roughness: 0.5,
   });
   ticks.forEach((tick) => {
     canvas.line(tick.left, tick.top, tick.left, tick.top - 10, {
-      stroke: "#ff0000",
+      stroke: "#000000",
       strokeWidth: 1,
       roughness: 0.5,
     });
     context.fillText(tick.label, tick.left - 20, tick.top - 20);
   });
 }
-async function drawRectangles(
+
+function drawRectangles(
   canvas: RoughCanvas,
   context: CanvasRenderingContext2D,
-  metrics: Score[],
+  scores: Score[],
   option: Option,
-): Promise<void> {
-  const rectangles = metrics.map((metric) =>
-    createRectFromMetric(metric, option),
-  );
+) {
+  const rectangles = scores.map((score) => {
+    return {
+      left:
+        (new Date(score.start).getTime() - option.epoch) * option.ratio +
+        option.origin.left,
+      top: score.depth * option.ratio + option.origin.top,
+      width: score.duration * option.ratio,
+      height: option.ratio,
+      color: option.colorScheme(score),
+      duration: score.duration,
+      message: {
+        value: score.name,
+        position: "left",
+      },
+    };
+  });
   rectangles.forEach((rectangle) => {
     canvas.rectangle(
       rectangle.left,
@@ -232,34 +194,15 @@ async function drawRectangles(
       rectangle.height,
       {
         fill: rectangle.color,
-        roughness: 0.5,
+        roughness: 0,
       },
     );
     context.fillText(
-      rectangle.message.value,
+      `${rectangle.message.value} ${rectangle.duration}ms`,
       rectangle.left,
-      rectangle.top + 50,
+      rectangle.top + option.ratio / 2,
     );
   });
-}
-
-function createRectFromMetric(
-  metric: Score,
-  option: Option,
-): RectangleWithMessage {
-  return {
-    left:
-      (new Date(metric.start).getTime() - option.epoch) * option.ratio +
-      option.origin.left,
-    top: metric.depth * option.ratio + option.origin.top,
-    width: metric.duration * option.ratio,
-    height: option.ratio,
-    color: option.colorScheme(metric),
-    message: {
-      value: metric.name,
-      position: "left",
-    },
-  };
 }
 
 function render(canvas: Canvas) {
