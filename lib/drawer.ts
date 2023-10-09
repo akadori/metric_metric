@@ -47,8 +47,8 @@ export async function main(config: CanvasConfig & DataConfig) {
   const context = canvas.getContext("2d");
   // @ts-ignore
   const rc = rough.canvas(canvas);
-  const ratio = 66;
-  const fontSize = ratio / 4;
+  const ratio = 40;
+  const fontSize = ratio / 2;
   context.font = `${fontSize}px serif`; // TODO: make it configurable
   const epoch = scores.reduce((acc, cur) => {
     const start = new Date(cur.start).getTime();
@@ -152,7 +152,7 @@ function horizontalAxis(
   canvas.line(line.from.x, line.from.y, line.to.x, line.to.y, {
     stroke: "#000000",
     strokeWidth: 1,
-    roughness: 0.5,
+    roughness: 0,
   });
   ticks.forEach((tick) => {
     canvas.line(tick.left, tick.top, tick.left, tick.top - 10, {
