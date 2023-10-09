@@ -1,8 +1,14 @@
+
+import fs from "fs";
+import path from "path";
+import { promisify } from "util";
 import Module from "module";
 // @ts-ignore
 const originalLoad = Module._load;
 
-type ModuleRequiredMetric = {
+const writeFileAsync = promisify(fs.writeFile);
+
+type ScoreForRequire = {
   name: string;
   start: Date;
   end: Date;
@@ -10,33 +16,13 @@ type ModuleRequiredMetric = {
   parent: string;
   depth: number;
 };
-const metrics: Array<ModuleRequiredMetric> = [];
+const scores: Array<ScoreForRequire> = [];
 let depth = 0;
 export const ModuleGraphMetricPlugin = {
   beforeStart: () => {
     console.log("ModuleGraphMetricPlugin before start registering...");
-    const spyedLoad = function (
-      request: string,
-      parent: Module,
-      isMain: boolean,
-    ) {
-      depth++;
-      const start = new Date();
-      const result = originalLoad(request, parent, isMain);
-      const end = new Date();
-      depth--;
-      metrics.push({
-        name: request,
-        start,
-        end,
-        duration: end.getTime() - start.getTime(),
-        parent: parent.filename,
-        depth,
-      });
-      return result;
-    };
     // @ts-ignore
-    Module._load = spyedLoad;
+    Module._load = loadAndMetric;
   },
   afterStart: () => {
     if (originalLoad) {
@@ -45,12 +31,8 @@ export const ModuleGraphMetricPlugin = {
     }
   },
   beforeStop: async () => {
-    const fs = require("fs") as typeof import("fs");
-    const path = require("path") as typeof import("path");
-    const { promisify } = require("util");
-    const writeFileAsync = promisify(fs.writeFile);
     const metricsPath = path.join(__dirname, "../metrics.json");
-    await writeFileAsync(metricsPath, JSON.stringify(metrics, null, 2));
+    await writeFileAsync(metricsPath, JSON.stringify(scores, null, 2));
   },
 };
 
@@ -64,7 +46,7 @@ function loadAndMetric(
   const result = originalLoad(request, parent, isMain);
   const end = new Date();
   depth--;
-  metrics.push({
+  scores.push({
     name: request,
     start,
     end,
