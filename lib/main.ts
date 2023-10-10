@@ -5,10 +5,11 @@ type RequireRacerInput = {
   outfilePath: string;
   canvasWidth: number;
   canvasHeight: number;
+  threshold?: number;
 };
 
 export const main = async (input: RequireRacerInput) => {
-  const scorer = new Scorer();
+  const scorer = new Scorer(input.threshold);
   scorer.start();
   require(input.entryPath);
   const scores = scorer.stop();

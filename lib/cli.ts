@@ -11,6 +11,7 @@ const outfile = process.argv[3]; // ex. node dist/dev.js ./main.js ./metrics.htm
 const outfilePath = path.resolve(process.cwd(), outfile);
 const width = process.argv[4]; // ex. node dist/dev.js ./main.js ./metrics.html 1280
 const height = process.argv[5]; // ex. node dist/dev.js ./main.js ./metrics.html 1280 4000
+const threshold = process.argv[6]; // ex. node dist/dev.js ./main.js ./metrics.html 1280 4000 1000
 
 if (!entry || !outfile || !width || !height) {
   console.error("Usage: require-racer ./main.js ./metrics.html 1280 4000");
@@ -22,4 +23,5 @@ main({
   outfilePath,
   canvasWidth: Number(width),
   canvasHeight: Number(height),
+  threshold: threshold ? Number(threshold) : undefined,
 }).catch((e) => console.error(e));
