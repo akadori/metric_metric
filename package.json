@@ -1,10 +1,10 @@
 {
-  "name": "metric_metric",
-  "version": "1.0.3",
+  "name": "rqrc",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/lib/main.js",
   "bin": {
-    "require-racer": "./dist/lib/cli.js"
+    "rqrc": "./dist/lib/cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
