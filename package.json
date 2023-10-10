@@ -20,6 +20,7 @@
   "dependencies": {
     "@types/debug": "^4.1.9",
     "canvas": "^2.11.2",
+    "commander": "^11.0.0",
     "debug": "^4.3.4",
     "roughjs": "^4.6.4",
     "tsx": "^3.13.0",
