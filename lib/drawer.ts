@@ -13,7 +13,8 @@ type Option = {
     top: number;
     left: number;
   };
-  fontSize?: number;
+  fontSize: number;
+  lineHeight: number;
 };
 
 type Line = {
@@ -48,13 +49,21 @@ export async function main(config: CanvasConfig & DataConfig) {
   const context = canvas.getContext("2d");
   // @ts-ignore
   const rc = rough.canvas(canvas);
-  const ratio = 40;
-  const fontSize = ratio / 2;
+  const fontSize = 20;
   context.font = `${fontSize}px serif`; // TODO: make it configurable
   const epoch = scores.reduce((acc, cur) => {
     const start = new Date(cur.start).getTime();
     return acc < start ? acc : start;
   }, Infinity);
+  const maxDuration = scores.reduce((acc, cur) => {
+    return acc < cur.duration ? cur.duration : acc;
+  }, 0);
+  const canvasWidth = config.width;
+  const graphOriginX = 30;
+  const graphOriginY = 50;
+  const ratio = (canvasWidth - graphOriginX) / maxDuration;
+  // 行の高さ
+  const lineHeight = 30;
   const colorScheme = (metric: Score): Color => {
     switch (metric.depth % 3) {
       case 0:
@@ -68,8 +77,8 @@ export async function main(config: CanvasConfig & DataConfig) {
     }
   };
   const origin = {
-    top: 50,
-    left: 30,
+    left: graphOriginX,
+    top: graphOriginY,
   };
   verticalAxis(rc, context, scores, {
     epoch,
@@ -77,18 +86,23 @@ export async function main(config: CanvasConfig & DataConfig) {
     colorScheme,
     origin,
     fontSize,
+    lineHeight,
   });
   horizontalAxis(rc, context, scores, {
     epoch,
     ratio,
     colorScheme,
     origin,
+    fontSize,
+    lineHeight,
   });
   drawRectangles(rc, context, scores, {
     epoch,
     ratio,
     colorScheme,
     origin,
+    fontSize,
+    lineHeight,
   });
   render(canvas, config.outfilePath);
 }
@@ -106,7 +120,7 @@ function verticalAxis(
     option.origin.left,
     option.origin.top,
     option.origin.left,
-    option.origin.top + (maxDepth + 1) * option.ratio,
+    option.origin.top + (maxDepth + 1) * option.lineHeight,
     {
       stroke: "#000000",
       strokeWidth: 1,
@@ -117,7 +131,7 @@ function verticalAxis(
     context.fillText(
       i.toString(),
       option.origin.left - 20,
-      option.origin.top + (i + 0.5) * option.ratio + (option.fontSize || 0) / 2,
+      option.origin.top + (i + 0.5) * option.lineHeight + (option.fontSize || 0) / 2,
     );
   }
 }
@@ -176,9 +190,9 @@ function drawRectangles(
       left:
         (new Date(score.start).getTime() - option.epoch) * option.ratio +
         option.origin.left,
-      top: score.depth * option.ratio + option.origin.top,
+      top: score.depth * option.lineHeight + option.origin.top,
       width: score.duration * option.ratio,
-      height: option.ratio,
+      height: option.lineHeight,
       color: option.colorScheme(score),
       duration: score.duration,
       message: {
@@ -201,7 +215,7 @@ function drawRectangles(
     context.fillText(
       `${rectangle.message.value} ${rectangle.duration}ms`,
       rectangle.left,
-      rectangle.top + option.ratio / 2,
+      rectangle.top + option.lineHeight / 2,
     );
   });
 }
