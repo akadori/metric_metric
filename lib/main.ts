@@ -2,11 +2,12 @@ import { main as drawerMain } from "./drawer";
 import { Scorer } from "./scorer";
 type RequireRacerInput = {
   entryPath: string;
+  outfilePath: string;
   canvasWidth: number;
   canvasHeight: number;
 };
 
-const main = async (input: RequireRacerInput) => {
+export const main = async (input: RequireRacerInput) => {
   const scorer = new Scorer();
   scorer.start();
   require(input.entryPath);
@@ -15,14 +16,6 @@ const main = async (input: RequireRacerInput) => {
     width: input.canvasWidth,
     height: input.canvasHeight,
     src: scores,
+    outfilePath: input.outfilePath,
   });
 };
-
-const entry = process.argv[2]; // ex. node dist/dev.js ./main
-console.log("entry", entry);
-
-main({
-  entryPath: entry,
-  canvasWidth: 4000,
-  canvasHeight: 4000,
-}).catch((e) => console.error(e));

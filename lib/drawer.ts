@@ -39,6 +39,7 @@ type CanvasConfig = {
 
 type DataConfig = {
   src: Score[];
+  outfilePath: string;
 };
 
 export async function main(config: CanvasConfig & DataConfig) {
@@ -89,7 +90,7 @@ export async function main(config: CanvasConfig & DataConfig) {
     colorScheme,
     origin,
   });
-  render(canvas);
+  render(canvas, config.outfilePath);
 }
 
 function verticalAxis(
@@ -205,9 +206,9 @@ function drawRectangles(
   });
 }
 
-function render(canvas: Canvas) {
+function render(canvas: Canvas, outfilePath: string) {
   fs.writeFileSync(
-    "hoge.html",
+    outfilePath,
     `<img src="${canvas.toDataURL()}" /><script>console.log("uuuu")</script>`,
   );
 }
