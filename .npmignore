@@ -1,0 +1,6 @@
+lib
+.vscode
+node_modules
+biome.json
+*.html
+tsconfig.json

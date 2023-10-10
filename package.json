@@ -2,7 +2,10 @@
   "name": "metric_metric",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/lib/main.js",
+  "bin": {
+    "require-racer": "./dist/cli.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
