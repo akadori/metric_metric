@@ -2,12 +2,13 @@
   "name": "rqrc",
   "version": "0.0.1",
   "description": "",
-  "main": "dist/lib/main.js",
+  "main": "dist/main.js",
   "bin": {
-    "rqrc": "./dist/lib/cli.js"
+    "rqrc": "./dist/cli.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild $(find ./lib -name '*.ts' -not -name '*.d.ts' -not -name '*.test.ts') --outdir=dist --platform=node --define:VERSION=\"'$npm_package_version'\" --format=cjs"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.2.2",
     "@types/node": "^20.8.3",
+    "esbuild": "^0.19.4",
     "typescript": "^5.2.2"
   },
   "dependencies": {

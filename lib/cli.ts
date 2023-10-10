@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 import path from "path";
-import { main } from "./main";
 import { Command } from "commander";
+import { main } from "./main";
 
 const program = new Command();
 program
   .name("require-racer")
   .description("Measure require time of each module and draw metrics")
-  .version("0.0.1");
+  .version(VERSION);
 program
   .option("-w, --width <width>", "canvas width(px)")
   .option("-h, --height <height>", "canvas height(px)")

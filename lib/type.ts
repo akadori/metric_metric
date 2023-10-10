@@ -12,3 +12,6 @@ export const ScoresSchema = z.array(ScoreSchema);
 
 export type Score = z.infer<typeof ScoreSchema>;
 export type Scores = z.infer<typeof ScoresSchema>;
+declare global {
+  const VERSION: string; // esbuild will define this variable
+}
