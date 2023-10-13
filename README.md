@@ -17,4 +17,4 @@ $ node dist/cli.js ./demo/main.js -o out.html -w 960 -h 500 && open out.html
 $ # you'll see the following image
 ```
 
-![example](./example.png)
+![example](https://raw.githubusercontent.com/akadori/rqrc/main/example.png)
